@@ -263,22 +263,6 @@ The project demonstrates how Endee can be used as the retrieval layer for recrui
 
 ---
 
-# 📸 Demo Screenshots
-
-## Home Page
-
-(Add Screenshot)
-
-## Match Analysis
-
-(Add Screenshot)
-
-## Endee Retrieval Results
-
-(Add Screenshot)
-
----
-
 # 🚀 Future Improvements
 
 * Multi-resume ranking
@@ -288,12 +272,6 @@ The project demonstrates how Endee can be used as the retrieval layer for recrui
 * LLM-based feedback generation
 * Resume optimization suggestions
 * Automated interview question generation
-
----
-
-# 🎥 Demo Video
-
-(Add YouTube or Drive Link)
 
 ---
 

@@ -13,12 +13,19 @@ def retrieve_chunks(
     )
 
     chunks = []
+    seen = set()
 
     for item in results:
 
-        if "meta" in item:
-            chunks.append(
-                item["meta"]["text"]
-            )
+        if "meta" not in item:
+            continue
+
+        text = item["meta"]["text"]
+
+        if text in seen:
+            continue
+
+        seen.add(text)
+        chunks.append(text)
 
     return chunks

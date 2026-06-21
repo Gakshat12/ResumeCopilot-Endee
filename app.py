@@ -136,20 +136,20 @@ if st.button("Analyze Resume"):
             top_k=3
         )
 
-        final_score = calculate_final_score(
-            score,
-            resume_skills,
-            jd_skills,
-            top_chunks
-        )
-
     score = compute_match_score(
         resume_embedding,
         jd_embedding
     )
 
-    feedback = generate_feedback(
+    final_score = calculate_final_score(
         score,
+        resume_skills,
+        jd_skills,
+        top_chunks
+    )
+
+    feedback = generate_feedback(
+        final_score,
         missing_skills
     )
 
@@ -167,12 +167,12 @@ if st.button("Analyze Resume"):
 
         st.metric(
             "Resume Match %",
-            f"{score}%"
+            f"{final_score}%"
         )
 
         st.progress(
             min(
-                int(score),
+                int(final_score),
                 100
             )
         )
@@ -245,10 +245,21 @@ if st.button("Analyze Resume"):
         "🎯 Relevant Resume Sections (Endee)"
     )
 
-    for chunk in top_chunks:
+    shown = set()
 
-        st.write(
-            chunk
+    for i, chunk in enumerate(top_chunks, start=1):
+
+        if chunk in shown:
+            continue
+
+        shown.add(chunk)
+
+        st.markdown(
+            f"### Result {i}"
+        )
+
+        st.info(
+            chunk[:600]
         )
 
         st.divider()
