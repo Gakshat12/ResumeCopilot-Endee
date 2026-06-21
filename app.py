@@ -7,7 +7,10 @@ from matcher import compute_match_score
 from chunker import chunk_text
 from skills import extract_skills
 from analyzer import generate_feedback
-from endee_client import EndeeVectorStore
+from scoring import calculate_final_score
+from vector_store import store_chunks
+from retriever import retrieve_chunks
+
 UPLOAD_FOLDER = "uploads"
 
 os.makedirs(
@@ -22,10 +25,8 @@ st.set_page_config(
 
 st.title("🚀 ResumeCopilot-Endee")
 
-st.markdown(
-    """
-    Upload your Resume and compare it against a Job Description.
-    """
+st.write(
+    "Upload a Resume and compare it with a Job Description"
 )
 
 resume_file = st.file_uploader(
@@ -41,15 +42,19 @@ job_description = st.text_area(
 if st.button("Analyze Resume"):
 
     if resume_file is None:
+
         st.error(
             "Please upload a resume."
         )
+
         st.stop()
 
     if len(job_description.strip()) == 0:
+
         st.error(
             "Please paste a Job Description."
         )
+
         st.stop()
 
     file_path = os.path.join(
@@ -58,6 +63,7 @@ if st.button("Analyze Resume"):
     )
 
     with open(file_path, "wb") as f:
+
         f.write(
             resume_file.getbuffer()
         )
@@ -65,6 +71,7 @@ if st.button("Analyze Resume"):
     with st.spinner(
         "Extracting Resume..."
     ):
+
         resume_text = extract_text(
             file_path
         )
@@ -72,19 +79,6 @@ if st.button("Analyze Resume"):
     chunks = chunk_text(
         resume_text
     )
-
-    store = EndeeVectorStore()
-
-    for chunk in chunks:
-
-        embedding = get_embedding(
-            chunk
-        )
-
-        store.add(
-            chunk,
-            embedding
-        )
 
     resume_skills = extract_skills(
         resume_text
@@ -95,7 +89,8 @@ if st.button("Analyze Resume"):
     )
 
     missing_skills = list(
-        set(jd_skills) -
+        set(jd_skills)
+        -
         set(resume_skills)
     )
 
@@ -111,8 +106,41 @@ if st.button("Analyze Resume"):
             job_description
         )
 
-        top_chunks = store.search(
-            jd_embedding
+    chunk_embeddings = []
+
+    for chunk in chunks:
+
+        emb = get_embedding(
+            chunk
+        )
+
+        chunk_embeddings.append(
+            emb
+        )
+
+    with st.spinner(
+        "Storing Resume Chunks in Endee..."
+    ):
+
+        store_chunks(
+            chunks,
+            chunk_embeddings
+        )
+
+    with st.spinner(
+        "Searching Endee..."
+    ):
+
+        top_chunks = retrieve_chunks(
+            jd_embedding,
+            top_k=3
+        )
+
+        final_score = calculate_final_score(
+            score,
+            resume_skills,
+            jd_skills,
+            top_chunks
         )
 
     score = compute_match_score(
@@ -143,23 +171,11 @@ if st.button("Analyze Resume"):
         )
 
         st.progress(
-            min(int(score), 100)
+            min(
+                int(score),
+                100
+            )
         )
-
-        if score >= 80:
-            st.success(
-                "Excellent Match"
-            )
-
-        elif score >= 60:
-            st.warning(
-                "Good Match"
-            )
-
-        else:
-            st.error(
-                "Needs Improvement"
-            )
 
     with col2:
 
@@ -183,39 +199,32 @@ if st.button("Analyze Resume"):
         "🛠 Resume Skills"
     )
 
-    if resume_skills:
-        st.write(
-            resume_skills
-        )
-    else:
-        st.warning(
-            "No skills detected."
-        )
+    st.write(
+        resume_skills
+    )
 
     st.subheader(
         "📋 JD Skills"
     )
 
-    if jd_skills:
-        st.write(
-            jd_skills
-        )
-    else:
-        st.warning(
-            "No JD skills detected."
-        )
+    st.write(
+        jd_skills
+    )
 
     st.subheader(
         "❌ Missing Skills"
     )
 
     if missing_skills:
+
         st.error(
             ", ".join(
                 missing_skills
             )
         )
+
     else:
+
         st.success(
             "No Missing Skills Found"
         )
@@ -225,11 +234,24 @@ if st.button("Analyze Resume"):
     )
 
     for item in feedback:
+
         st.write(
             item
         )
 
     st.divider()
+
+    st.subheader(
+        "🎯 Relevant Resume Sections (Endee)"
+    )
+
+    for chunk in top_chunks:
+
+        st.write(
+            chunk
+        )
+
+        st.divider()
 
     st.subheader(
         "📄 Resume Preview"
@@ -240,12 +262,3 @@ if st.button("Analyze Resume"):
         resume_text[:5000],
         height=350
     )
-    st.subheader(
-    "Relevant Resume Sections"
-    )
-
-    for chunk in top_chunks:
-
-        st.write(chunk)
-
-        st.divider()

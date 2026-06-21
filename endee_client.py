@@ -1,14 +1,27 @@
-class EndeeVectorStore:
+from endee import Endee, Precision
 
-    def __init__(self):
-        self.vectors = []
-        self.texts = []
+client = Endee()
 
-    def add(self, text, vector):
+INDEX_NAME = "resume_index"
 
-        self.texts.append(text)
-        self.vectors.append(vector)
+def get_resume_index():
 
-    def search(self, query_vector):
+    indexes = client.list_indexes()
 
-        return self.texts[:5]
+    existing = [
+        idx["name"]
+        for idx in indexes["indexes"]
+    ]
+
+    if INDEX_NAME not in existing:
+
+        client.create_index(
+            name=INDEX_NAME,
+            dimension=384,
+            space_type="cosine",
+            precision=Precision.INT8
+        )
+
+    return client.get_index(
+        name=INDEX_NAME
+    )
