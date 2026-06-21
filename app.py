@@ -7,7 +7,7 @@ from matcher import compute_match_score
 from chunker import chunk_text
 from skills import extract_skills
 from analyzer import generate_feedback
-
+from endee_client import EndeeVectorStore
 UPLOAD_FOLDER = "uploads"
 
 os.makedirs(
@@ -73,6 +73,19 @@ if st.button("Analyze Resume"):
         resume_text
     )
 
+    store = EndeeVectorStore()
+
+    for chunk in chunks:
+
+        embedding = get_embedding(
+            chunk
+        )
+
+        store.add(
+            chunk,
+            embedding
+        )
+
     resume_skills = extract_skills(
         resume_text
     )
@@ -96,6 +109,10 @@ if st.button("Analyze Resume"):
 
         jd_embedding = get_embedding(
             job_description
+        )
+
+        top_chunks = store.search(
+            jd_embedding
         )
 
     score = compute_match_score(
@@ -223,3 +240,12 @@ if st.button("Analyze Resume"):
         resume_text[:5000],
         height=350
     )
+    st.subheader(
+    "Relevant Resume Sections"
+    )
+
+    for chunk in top_chunks:
+
+        st.write(chunk)
+
+        st.divider()
